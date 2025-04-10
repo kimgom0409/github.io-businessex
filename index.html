@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Explorer (Dark Mode)</title> <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Dark Scrollbar styling */
+        #worry-display-area::-webkit-scrollbar,
+        #live-worry-feed::-webkit-scrollbar {
+            width: 8px;
+        }
+        #worry-display-area::-webkit-scrollbar-track,
+        #live-worry-feed::-webkit-scrollbar-track {
+            background: #2d3748; /* gray-800 */
+            border-radius: 10px;
+        }
+        #worry-display-area::-webkit-scrollbar-thumb,
+        #live-worry-feed::-webkit-scrollbar-thumb {
+            background: #718096; /* gray-500 */
+            border-radius: 10px;
+        }
+        #worry-display-area::-webkit-scrollbar-thumb:hover,
+        #live-worry-feed::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0; /* gray-400 */
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        /* Style for the count badge */
+        .count-badge {
+            min-width: 24px; /* Ensure badge has some width */
+        }
+        /* Ensure minimum height for list containers */
+        .list-container {
+             min-height: 150px;
+             max-height: 300px;
+        }
+        /* Style for items in the horizontal feed */
+        .live-worry-item-horizontal {
+            flex: 0 1 auto;
+        }
+        /* Category button styling (Dark Mode) */
+        .category-button {
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .category-button.active {
+            background-color: #2563eb; /* blue-600 */
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .category-button:not(.active) {
+             background-color: #4a5568; /* gray-700 */
+             color: #e2e8f0; /* gray-200 */
+             border-color: #718096; /* gray-500 */
+        }
+         .category-button:not(.active):hover {
+             background-color: #718096; /* gray-500 */
+             color: #1a202c; /* gray-900 */
+        }
+
+        /* Icon styling */
+        .title-icon {
+            display: inline-block;
+            width: 1.5em; /* Adjust size as needed */
+            height: 1.5em;
+            margin-right: 0.4em;
+            vertical-align: -0.25em; /* Align icon nicely with text */
+            fill: currentColor; /* Use text color */
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-gray-900 to-gray-800 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-gray-800 rounded-xl shadow-lg p-6 md:p-8 w-full max-w-5xl text-gray-200">
+        <h1 class="text-2xl md:text-3xl font-bold text-center text-white mb-6 flex items-center justify-center">
+            <svg class="title-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm4.25 5.112a.75.75 0 00-.97-.109l-4.28 2.568a.75.75 0 000 1.358l4.28 2.568a.75.75 0 10.862-1.248L13.1 12l3.18-1.908a.75.75 0 00.108-.98zM9.75 7.362a.75.75 0 01.97-.109l4.28 2.568a.75.75 0 010 1.358l-4.28 2.568a.75.75 0 11-.862-1.248L10.9 12l-3.18-1.908a.75.75 0 01-.108-.98z" clip-rule="evenodd" />
+            </svg>
+            Business Explorer
+        </h1>
+
+        <div class="mb-6 md:mb-8">
+            <h2 class="text-lg font-semibold text-gray-300 mb-3 text-center">Select Business Category</h2>
+            <div id="category-selector" class="flex flex-wrap justify-center gap-2 md:gap-3">
+                </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6 md:gap-8">
+            <div>
+                <h2 class="text-xl font-semibold text-gray-100 mb-2">Frequent Worries (<span id="current-category-frequent">All</span>)</h2>
+                <p class="text-sm text-gray-400 mb-3">Worries mentioned 5+ times globally, filtered by category.</p>
+                <div id="worry-display-area" class="list-container space-y-3 overflow-y-auto pr-2 border border-gray-600 rounded-lg p-4 bg-gray-700 flex items-center justify-center">
+                    <p id="status-message" class="text-center text-gray-400">Aggregating worries...</p>
+                    </div>
+            </div>
+
+            <div>
+                 <h2 class="text-xl font-semibold text-gray-100 mb-2">Live Worry Feed (<span id="current-category-live">All</span>)</h2>
+                 <p class="text-sm text-gray-400 mb-3">New worries in the selected category appear here.</p>
+                 <div id="live-worry-feed" class="list-container flex flex-wrap gap-2 overflow-y-auto pr-2 border border-gray-600 rounded-lg p-4 bg-gray-700 items-start justify-start">
+                     <p id="live-feed-status" class="text-center text-gray-400 w-full">Waiting for new worries...</p>
+                     </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element References ---
+        const worryDisplayArea = document.getElementById('worry-display-area');
+        const statusMessage = document.getElementById('status-message');
+        const liveWorryFeed = document.getElementById('live-worry-feed');
+        const liveFeedStatus = document.getElementById('live-feed-status');
+        const categorySelector = document.getElementById('category-selector');
+        const currentCategoryFrequentEl = document.getElementById('current-category-frequent');
+        const currentCategoryLiveEl = document.getElementById('current-category-live');
+
+        // --- Simulation Data & Configuration ---
+        const categories = [
+            "All", "business", "smallbusiness", "Entrepreneur", "marketing", "finance",
+            "investing", "startups", "sales", "consulting", "careeradvice",
+            "personalfinance", "stockmarket", "ecommerce", "digital_marketing",
+            "projectmanagement", "remotework", "freelance", "b2b", "SaaS",
+            "venturecapital"
+         ];
+        let selectedCategory = "All";
+
+        const sampleWorries = [
+             { text: "How to find reliable investors for seed funding?", category: "venturecapital" },
+            { text: "What's the best marketing strategy for a niche SaaS product?", category: "SaaS" },
+            { text: "Struggling to increase Q3 sales figures.", category: "sales" },
+            { text: "Need advice on managing a fully remote team effectively.", category: "remotework" },
+            { text: "Choosing the right CRM software is overwhelming.", category: "business" },
+            { text: "How to handle scope creep with freelance clients?", category: "freelance" },
+            { text: "Is my startup's burn rate too high?", category: "startups" },
+            { text: "Difficulty generating qualified B2B leads.", category: "b2b" },
+            { text: "Improving website conversion rate for e-commerce store.", category: "ecommerce" },
+            { text: "Should I pivot my business model?", category: "Entrepreneur" },
+            { text: "Finding good co-founders is challenging.", category: "startups" },
+            { text: "Cash flow management issues in small business.", category: "smallbusiness" },
+            { text: "What are the latest trends in digital marketing?", category: "digital_marketing" },
+            { text: "Negotiating a higher salary in my consulting role.", category: "consulting" },
+            { text: "How to balance growth vs. profitability?", category: "finance" },
+            // Duplicates for testing counts
+            { text: "How to find reliable investors for seed funding?", category: "venturecapital" },
+            { text: "Struggling to increase Q3 sales figures.", category: "sales" },
+            { text: "Need advice on managing a fully remote team effectively.", category: "remotework" },
+            { text: "How to find reliable investors for seed funding?", category: "venturecapital" },
+            { text: "Struggling to increase Q3 sales figures.", category: "sales" },
+            { text: "Need advice on managing a fully remote team effectively.", category: "remotework" },
+            { text: "How to find reliable investors for seed funding?", category: "venturecapital" },
+            { text: "Struggling to increase Q3 sales figures.", category: "sales" },
+            { text: "Need advice on managing a fully remote team effectively.", category: "remotework" },
+            { text: "How to find reliable investors for seed funding?", category: "venturecapital" }, // Will reach 5+
+            { text: "Struggling to increase Q3 sales figures.", category: "sales" }, // Will reach 5+
+            { text: "Need advice on managing a fully remote team effectively.", category: "remotework" }, // Will reach 5+
+            { text: "Choosing the right CRM software is overwhelming.", category: "business" },
+            { text: "Is my startup's burn rate too high?", category: "startups" },
+        ];
+        let worryIndex = 0;
+        const worryCounts = new Map();
+        const worryCategories = new Map();
+        const displayThreshold = 5;
+        const maxLiveWorries = 25;
+
+        // --- Function to Create Category Buttons ---
+        function createCategoryButtons() {
+            categorySelector.innerHTML = '';
+            categories.forEach(category => {
+                const button = document.createElement('button');
+                button.textContent = category;
+                button.dataset.category = category;
+                // Base classes + dark mode specifics defined in <style>
+                button.classList.add(
+                    'category-button', 'px-3', 'py-1', 'md:px-4', 'md:py-1.5', 'border',
+                    'rounded-full', 'text-xs', 'md:text-sm',
+                    'whitespace-nowrap'
+                );
+                if (category === selectedCategory) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', handleCategoryClick);
+                categorySelector.appendChild(button);
+            });
+        }
+
+        // --- Function to Handle Category Selection ---
+        function handleCategoryClick(event) {
+            const newCategory = event.target.dataset.category;
+            if (newCategory === selectedCategory) return;
+
+            selectedCategory = newCategory;
+
+            const buttons = categorySelector.querySelectorAll('.category-button');
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.category === selectedCategory);
+            });
+
+            currentCategoryFrequentEl.textContent = selectedCategory;
+            currentCategoryLiveEl.textContent = selectedCategory;
+
+            updateFrequentWorriesList();
+        }
+
+         // --- Function to Clear Live Feed (Optional) ---
+         function clearLiveFeed() {
+            const items = liveWorryFeed.querySelectorAll('.live-worry-item-horizontal');
+            items.forEach(item => item.remove());
+            liveFeedStatus.textContent = `Waiting for new worries in ${selectedCategory}...`;
+            liveFeedStatus.classList.remove('hidden');
+            liveWorryFeed.classList.add('items-start', 'justify-start');
+            liveWorryFeed.classList.remove('items-center', 'justify-center');
+         }
+
+
+        // --- Function to Add Worry to the Live Feed List (Horizontal) ---
+        function addWorryToLiveFeed(worryText, category) {
+            if (selectedCategory !== 'All' && category !== selectedCategory) {
+                return;
+            }
+
+            if (liveFeedStatus && !liveFeedStatus.classList.contains('hidden')) {
+                liveFeedStatus.classList.add('hidden');
+                liveWorryFeed.classList.remove('items-center', 'justify-center');
+                liveWorryFeed.classList.add('items-start', 'justify-start');
+            }
+
+            const worryElement = document.createElement('div');
+            // Dark mode item styling
+            worryElement.classList.add(
+                'bg-gray-600', 'p-2', 'rounded-lg', 'shadow-md', // Adjusted shadow
+                'border', 'border-gray-500', 'live-worry-item-horizontal', 'fade-in'
+            );
+            worryElement.dataset.category = category;
+
+            const paragraph = document.createElement('p');
+            paragraph.classList.add('text-gray-200', 'text-sm'); // Lighter text for dark bg
+            paragraph.textContent = worryText;
+
+            // Category label styling for dark mode
+            if (selectedCategory === 'All') {
+                const categoryLabel = document.createElement('span');
+                // Brighter blue for better visibility on dark bg
+                categoryLabel.classList.add('text-xs', 'text-blue-400', 'ml-2', 'font-medium');
+                categoryLabel.textContent = `(${category})`;
+                paragraph.appendChild(categoryLabel);
+            }
+
+            worryElement.appendChild(paragraph);
+            liveWorryFeed.prepend(worryElement);
+
+            let currentItems = liveWorryFeed.querySelectorAll('div.live-worry-item-horizontal');
+            while (currentItems.length > maxLiveWorries) {
+                const lastItem = liveWorryFeed.querySelector('div.live-worry-item-horizontal:last-child');
+                 if (lastItem) {
+                    liveWorryFeed.removeChild(lastItem);
+                 } else {
+                    break;
+                 }
+                 currentItems = liveWorryFeed.querySelectorAll('div.live-worry-item-horizontal');
+            }
+        }
+
+        // --- Function to Update the Frequent Worries List ---
+        function updateFrequentWorriesList() {
+            const frequentWorriesGlobally = [];
+            for (const [worry, count] of worryCounts.entries()) {
+                if (count >= displayThreshold) {
+                    const category = worryCategories.get(worry) || "Unknown";
+                    frequentWorriesGlobally.push({ text: worry, count: count, category: category });
+                }
+            }
+
+            const worriesToDisplay = frequentWorriesGlobally.filter(worry =>
+                selectedCategory === 'All' || worry.category === selectedCategory
+            );
+
+            worriesToDisplay.sort((a, b) => b.count - a.count);
+
+            worryDisplayArea.innerHTML = ''; // Clear previous items
+
+            if (worriesToDisplay.length === 0) {
+                const statusP = document.createElement('p');
+                statusP.id = 'status-message';
+                statusP.classList.add('text-center', 'text-gray-400'); // Dark mode text
+                 if (selectedCategory === 'All') {
+                     statusP.textContent = `No worries mentioned ${displayThreshold}+ times yet.`;
+                } else {
+                     statusP.textContent = `No worries in the "${selectedCategory}" category mentioned ${displayThreshold}+ times yet.`;
+                }
+                worryDisplayArea.appendChild(statusP);
+                worryDisplayArea.classList.add('items-center', 'justify-center');
+                worryDisplayArea.classList.remove('items-start', 'justify-start');
+            } else {
+                worryDisplayArea.classList.remove('items-center', 'justify-center');
+                worryDisplayArea.classList.add('items-start', 'justify-start', 'space-y-3');
+
+                worriesToDisplay.forEach(worryData => {
+                    const worryElement = document.createElement('div');
+                    // Dark mode item styling
+                    worryElement.classList.add(
+                        'bg-gray-600', 'p-3', 'rounded-lg', 'shadow-md',
+                        'border', 'border-gray-500', 'worry-item', 'fade-in',
+                        'flex', 'justify-between', 'items-center', 'space-x-2', 'w-full'
+                    );
+                    worryElement.dataset.category = worryData.category;
+
+                    const paragraph = document.createElement('p');
+                    paragraph.classList.add('text-gray-200', 'text-sm', 'flex-grow'); // Lighter text
+                    paragraph.textContent = worryData.text;
+
+                    // Dark mode category label
+                    if (selectedCategory === 'All') {
+                        const categoryLabel = document.createElement('span');
+                        categoryLabel.classList.add('text-xs', 'text-gray-400', 'ml-2'); // Adjusted color
+                        categoryLabel.textContent = `[${worryData.category}]`;
+                        paragraph.appendChild(categoryLabel);
+                    }
+
+                    const countBadge = document.createElement('span');
+                    // Count badge styling remains similar, stands out on dark bg
+                    countBadge.classList.add(
+                        'count-badge', 'bg-blue-500', 'text-white', 'text-xs',
+                        'font-semibold', 'px-2', 'py-0.5', 'rounded-full', 'text-center', 'flex-shrink-0'
+                    );
+                    countBadge.textContent = worryData.count;
+
+                    worryElement.appendChild(paragraph);
+                    worryElement.appendChild(countBadge);
+                    worryDisplayArea.appendChild(worryElement);
+                });
+            }
+        }
+
+        // --- Function to Process a New Worry ---
+        function processNewWorry(worryText, category) {
+            if (!worryText || worryText.trim() === '' || !category) return;
+            const trimmedWorry = worryText.trim();
+
+            addWorryToLiveFeed(trimmedWorry, category);
+
+            const currentCount = worryCounts.get(trimmedWorry) || 0;
+            worryCounts.set(trimmedWorry, currentCount + 1);
+            if (!worryCategories.has(trimmedWorry)) {
+                worryCategories.set(trimmedWorry, category);
+            }
+
+            const newCount = currentCount + 1;
+            if (newCount >= displayThreshold) {
+                 updateFrequentWorriesList();
+            }
+        }
+
+        // --- Function to Simulate Receiving External Updates ---
+        function simulateExternalUpdate() {
+            const worryData = sampleWorries[worryIndex % sampleWorries.length];
+            worryIndex++;
+            processNewWorry(worryData.text, worryData.category);
+        }
+
+        // --- Simulation Start ---
+        const simulationInterval = setInterval(simulateExternalUpdate, 1800);
+
+        // --- Initial Setup ---
+        createCategoryButtons();
+        updateFrequentWorriesList();
+
+        // Optional: Stop simulation
+        // setTimeout(() => clearInterval(simulationInterval), 60000);
+
+    </script>
+
+</body>
+</html>
